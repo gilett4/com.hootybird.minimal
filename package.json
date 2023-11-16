@@ -1,13 +1,13 @@
 {
   "name": "com.hootybird.minimal",
   "displayName": "hootybird.manimal",
-  "version": "1.3.0",
-  "unity": "2019.4",
+  "version": "1.0.0",
+  "unity": "2022.3.4f1",
   "description": "Base package.",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/gilett4/hootybird.base"
+    "url": "https://github.com/gilett4/hootybird.minimal"
   },
   "author": "vadym udod"
 }
