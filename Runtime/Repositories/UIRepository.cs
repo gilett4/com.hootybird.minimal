@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace HootyBird.Minimal.Repositories
 {
-    [CreateAssetMenu(fileName = "UIAssetsRepository", menuName = "JigsawPuzzle/Create UI Assets Repository")]
+    [CreateAssetMenu(fileName = "UIAssetsRepository", menuName = "Repositories/Create UI Assets Repository")]
     public class UIRepository : ScriptableObject
     {
         [SerializeField]

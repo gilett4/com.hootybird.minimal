@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace HootyBird.Minimal.Repositories
 {
-    [CreateAssetMenu(fileName = "AudioRepository", menuName = "JigsawPuzzle/Create AudioData Repository")]
+    [CreateAssetMenu(fileName = "AudioRepository", menuName = "Repositories/Create AudioData Repository")]
     public class AudioRepository : ScriptableObject
     {
         public List<SerializedAudioData> data;
