@@ -2,7 +2,7 @@
   "name": "com.hootybird.minimal",
   "displayName": "hootybird.manimal",
   "version": "1.0.1",
-  "unity": "6000.0.35f1",
+  "unity": "6000.0",
   "description": "Minimal package.",
   "license": "MIT",
   "repository": {
