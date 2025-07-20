@@ -15,7 +15,7 @@ namespace HootyBird.Minimal.Menu
         /// <summary>
         /// Active controller reference.
         /// </summary>
-        public static MenuController ActiveMenuController { get; private set; }
+        public static MenuController ActiveMenuController { get; protected set; }
         /// <summary>
         /// All available controllers.
         /// </summary>
@@ -24,8 +24,8 @@ namespace HootyBird.Minimal.Menu
         [SerializeField]
         public bool active = false;
 
-        private TweenBase tween;
-        private GraphicRaycaster raycaster;
+        protected TweenBase tween;
+        protected GraphicRaycaster raycaster;
 
         public List<MenuOverlay> overlays { get; protected set; }
         public List<MenuOverlay> overlaysStack { get; protected set; }
