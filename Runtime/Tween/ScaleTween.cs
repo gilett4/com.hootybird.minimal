@@ -13,12 +13,16 @@ namespace HootyBird.Minimal.Tween
 
         public override void AtProgress(float value, PlaybackDirection direction)
         {
+            base.AtProgress(value, direction);
+
             Vector3 currentValue;
             switch (direction)
             {
                 case PlaybackDirection.FORWARD:
                     if (value < 1f)
+                    {
                         currentValue = Vector3.LerpUnclamped(from, to, curve.Evaluate(value));
+                    }
                     else
                     {
                         currentValue = Vector3.LerpUnclamped(from, to, curve.Evaluate(1f));
@@ -28,7 +32,9 @@ namespace HootyBird.Minimal.Tween
 
                 default:
                     if (value < 1f)
+                    {
                         currentValue = Vector3.LerpUnclamped(to, from, curve.Evaluate(value));
+                    }
                     else
                     {
                         currentValue = Vector3.LerpUnclamped(to, from, curve.Evaluate(1f));

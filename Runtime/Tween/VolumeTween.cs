@@ -16,6 +16,8 @@ namespace HootyBird.Minimal.Tween
 
         public override void AtProgress(float value, PlaybackDirection direction)
         {
+            base.AtProgress(value, direction);
+
             float currentValue;
             switch (direction)
             {

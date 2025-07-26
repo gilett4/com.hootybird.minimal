@@ -123,9 +123,6 @@ namespace HootyBird.Minimal.Tween
         {
             Initialize();
 
-            onProgress?.Invoke((direction == PlaybackDirection.FORWARD) ? value : 1f - value);
-            _onProgress?.Invoke((direction == PlaybackDirection.FORWARD) ? value : 1f - value);
-
             AtProgress(value, direction);
 
             if (value >= 1f)
@@ -224,7 +221,11 @@ namespace HootyBird.Minimal.Tween
 
         public abstract void OnReset();
         public abstract void OnInitialized();
-        public abstract void AtProgress(Single value, PlaybackDirection direction);
+        public virtual void AtProgress(Single value, PlaybackDirection direction)
+        {
+            onProgress?.Invoke((direction == PlaybackDirection.FORWARD) ? value : 1f - value);
+            _onProgress?.Invoke((direction == PlaybackDirection.FORWARD) ? value : 1f - value);
+        }
     }
 
     public class Graphics

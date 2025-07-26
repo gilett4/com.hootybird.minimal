@@ -17,19 +17,27 @@ namespace HootyBird.Minimal.Tween
         public void FromCurrentPosition()
         {
             if (rectTransform)
+            {
                 from = rectTransform.anchoredPosition;
+            }
             else
+            {
                 from = transform.localPosition;
+            }
         }
 
         public override void AtProgress(float value, PlaybackDirection direction)
         {
+            base.AtProgress(value, direction);
+
             Vector3 currentValue;
             switch (direction)
             {
                 case PlaybackDirection.FORWARD:
                     if (value < 1f)
+                    {
                         currentValue = Vector3.Lerp(from, to, curve.Evaluate(value));
+                    }
                     else
                     {
                         currentValue = Vector3.Lerp(from, to, curve.Evaluate(1f));
@@ -39,7 +47,9 @@ namespace HootyBird.Minimal.Tween
 
                 default:
                     if (value < 1f)
+                    {
                         currentValue = Vector3.Lerp(to, from, curve.Evaluate(value));
+                    }
                     else
                     {
                         currentValue = Vector3.Lerp(to, from, curve.Evaluate(1f));
@@ -58,12 +68,18 @@ namespace HootyBird.Minimal.Tween
             if (local)
             {
                 if (rectTransform)
+                {
                     rectTransform.anchoredPosition = position;
+                }
                 else
+                {
                     transform.localPosition = position;
+                }
             }
             else
+            {
                 transform.position = position;
+            }
         }
 
         public override void OnReset()
@@ -78,12 +94,18 @@ namespace HootyBird.Minimal.Tween
             if (local)
             {
                 if (rectTransform)
+                {
                     _value = rectTransform.anchoredPosition;
+                }
                 else
+                {
                     _value = transform.localPosition;
+                }
             }
             else
+            {
                 _value = transform.position;
+            }
         }
     }
 }
