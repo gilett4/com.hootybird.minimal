@@ -16,8 +16,6 @@ namespace HootyBird.Minimal.Services
         [SerializeField]
         private AudioMixer mixer;
         [SerializeField]
-        private AudioMixerGroup bgOutputGroup;
-        [SerializeField]
         private AudioSource audioSource;
 
         private Dictionary<string, CachedAudioData> currentlyPlayed = new Dictionary<string, CachedAudioData>();
