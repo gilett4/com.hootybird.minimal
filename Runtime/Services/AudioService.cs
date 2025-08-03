@@ -14,6 +14,8 @@ namespace HootyBird.Minimal.Services
         public static AudioService Instance;
 
         [SerializeField]
+        private AudioRepository audioRepository;
+        [SerializeField]
         private AudioMixer mixer;
         [SerializeField]
         private AudioSource audioSource;
@@ -70,7 +72,7 @@ namespace HootyBird.Minimal.Services
                 return;
             }
 
-            SerializedAudioData data = DataHandler.Instance.AudioRepository.GetByName(name);
+            SerializedAudioData data = audioRepository.GetByName(name);
 
             if (data == null)
             {

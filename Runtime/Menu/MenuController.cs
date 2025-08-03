@@ -1,4 +1,5 @@
 ﻿using HootyBird.Minimal.Repositories;
+using HootyBird.Minimal.Services;
 using HootyBird.Minimal.Tween;
 using System.Collections.Generic;
 using System.Linq;
@@ -250,13 +251,13 @@ namespace HootyBird.Minimal.Menu
         }
 
         /// <summary>
-        /// Add overlay to controller using <see cref="DataHandler.UIRepository"/> UI assets.
+        /// Add overlay to controller using <see cref="UIDataService.UIRepository"/> UI assets.
         /// </summary>
         /// <typeparam name="T">Overlay to take from DataHandler.</typeparam>
         /// <returns>Overlay instance (by type).</returns>
         public T AddOverlay<T>() where T : MenuOverlay
         {
-            return AddOverlay<T>(DataHandler.Instance.UIRepository.GetOverlay<T>());
+            return AddOverlay<T>(UIDataService.Instance.UIRepository.GetOverlay<T>());
         }
 
         private void Initialize()

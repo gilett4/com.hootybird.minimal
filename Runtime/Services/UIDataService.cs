@@ -1,22 +1,16 @@
+using HootyBird.Minimal.Repositories;
 using UnityEngine;
 
-namespace HootyBird.Minimal.Repositories
+namespace HootyBird.Minimal.Services
 {
-    /// <summary>
-    /// Repositories container.
-    /// </summary>
-    public class DataHandler : MonoBehaviour
+    public class UIDataService : MonoBehaviour
     {
-        public static DataHandler Instance { get; private set; }
+        public static UIDataService Instance { get; private set; }
 
         [SerializeField]
         private UIRepository uiRepository;
-        [SerializeField]
-        private AudioRepository audioRepository;
 
         public UIRepository UIRepository => uiRepository;
-
-        public AudioRepository AudioRepository => audioRepository;
 
         private void Awake()
         {
