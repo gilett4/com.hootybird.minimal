@@ -1,6 +1,5 @@
-﻿using HootyBird.Minimal.Repositories;
-using HootyBird.Minimal.Services;
-using HootyBird.Minimal.Tween;
+﻿using HootyBird.Minimal.Tween;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -24,6 +23,8 @@ namespace HootyBird.Minimal.Menu
 
         [SerializeField]
         public bool active = false;
+        [SerializeField]
+        private bool sequentialTransition = false;
 
         protected TweenBase tween;
         protected GraphicRaycaster raycaster;
@@ -104,45 +105,26 @@ namespace HootyBird.Minimal.Menu
         /// </summary>
         public virtual void GoBack(bool animate = true)
         {
-            if (overlaysStack.Count > 0)
-            {
-                CloseCurrent(animate);
-
-                if (overlaysStack.Count > 0)
-                {
-                    MenuOverlay previous = overlaysStack.Last();
-                    SetCurrentOverlay(previous);
-                    previous.Open();
-                }
-            }
-        }
-
-        /// <summary>
-        /// Close target overlay, if it's a current one, <see cref="GoBack(bool)"/> one overlay.
-        /// </summary>
-        /// <param name="overlay">Target overlay.</param>
-        /// <param name="animate">Animated transition?</param>
-        public void CloseOverlay(MenuOverlay overlay, bool animate = true)
-        {
-            if (overlaysStack.Contains(overlay))
-            {
-                if (currentOverlay == overlay)
-                {
-                    GoBack(animate);
-                }
-                else
-                {
-                    overlaysStack.Remove(overlay);
-                    overlay.Close(animate);
-                }
-            }
+            StartCoroutine(CloseCurrentOverlayRoutine(animate));
         }
 
         /// <summary>
         /// Open overlay and set it as current one.
         /// </summary>
         /// <param name="index">Target index/</param>
-        public void OpenOverlay(int index) => OpenOverlay(overlays[index]);
+        public void OpenOverlay(int index)
+        {
+            OpenOverlay(overlays[index]);
+        }
+
+        /// <summary>
+        /// Open overlay and set it as current one.
+        /// </summary>
+        /// <param name="overlay">Target overlay.</param>
+        public void OpenOverlay<T>() where T : MenuOverlay
+        {
+            OpenOverlay(overlays.Find(overlay => overlay.GetType() == typeof(T) || overlay.GetType().IsSubclassOf(typeof(T))) as T);
+        }
 
         /// <summary>
         /// Open overlay and set it as current one.
@@ -150,18 +132,13 @@ namespace HootyBird.Minimal.Menu
         /// <param name="overlay">Target overlay.</param>
         public void OpenOverlay(MenuOverlay overlay)
         {
-            if (currentOverlay && currentOverlay != overlay && currentOverlay.IsOpened && overlay.ClosePreviousWhenOpened)
+            if (overlay == null)
             {
-                currentOverlay.Close();
+                Debug.LogError("Given overlay is null.");
+                return;
             }
 
-            if (!currentOverlay || (currentOverlay != overlay))
-            {
-                overlaysStack.Add(overlay);
-            }
-
-            SetCurrentOverlay(overlay);
-            currentOverlay.Open();
+            StartCoroutine(OpenOverlayRoutine(overlay));
         }
 
         /// <summary>
@@ -173,16 +150,7 @@ namespace HootyBird.Minimal.Menu
         {
             Initialize();
 
-            T overlay = overlays.Find(overlay => overlay.GetType() == typeof(T) || overlay.GetType().IsSubclassOf(typeof(T))) as T;
-
-            if (overlay == null)
-            {
-                return AddOverlay<T>();
-            }
-            else
-            {
-                return overlay;
-            }
+            return overlays.Find(overlay => overlay.GetType() == typeof(T) || overlay.GetType().IsSubclassOf(typeof(T))) as T;
         }
 
         /// <summary>
@@ -218,8 +186,12 @@ namespace HootyBird.Minimal.Menu
                 }
 
                 ActiveMenuController = this;
+                // Activate GO.
                 gameObject.SetActive(true);
+                // Animate menu controller.
                 tween.PlayForward(false);
+                // Refresh active overlay.
+                ActiveMenuController.currentOverlay?.RefreshContent();
             }
             else
             {
@@ -250,16 +222,6 @@ namespace HootyBird.Minimal.Menu
             return (T)newOverlay;
         }
 
-        /// <summary>
-        /// Add overlay to controller using <see cref="UIDataService.UIRepository"/> UI assets.
-        /// </summary>
-        /// <typeparam name="T">Overlay to take from DataHandler.</typeparam>
-        /// <returns>Overlay instance (by type).</returns>
-        public T AddOverlay<T>() where T : MenuOverlay
-        {
-            return AddOverlay<T>(UIDataService.Instance.UIRepository.GetOverlay<T>());
-        }
-
         private void Initialize()
         {
             if (initialized)
@@ -287,13 +249,6 @@ namespace HootyBird.Minimal.Menu
             }
         }
 
-        private void CloseCurrent(bool animate)
-        {
-            MenuOverlay last = overlaysStack.Last();
-            last.Close(animate);
-            overlaysStack.Remove(last);
-        }
-
         /// <summary>
         /// Deactivates controller when fadeOut animation is complete.
         /// </summary>
@@ -304,6 +259,60 @@ namespace HootyBird.Minimal.Menu
             {
                 gameObject.SetActive(false);
             }
+        }
+
+        private IEnumerator OpenOverlayRoutine(MenuOverlay overlay)
+        {
+            if (currentOverlay && currentOverlay != overlay && currentOverlay.IsOpened && overlay.ClosePreviousWhenOpened)
+            {
+                if (sequentialTransition)
+                {
+                    yield return currentOverlay.Close();
+                }
+                else
+                {
+                    StartCoroutine(currentOverlay.Close());
+                }
+            }
+
+            if (!currentOverlay || (currentOverlay != overlay))
+            {
+                overlaysStack.Add(overlay);
+            }
+
+            SetCurrentOverlay(overlay);
+            StartCoroutine(currentOverlay.Open());
+        }
+
+        private IEnumerator CloseCurrentOverlayRoutine(bool animate)
+        {
+            // Close current.
+            if (overlaysStack.Count == 0)
+            {
+                yield break;
+            }
+
+            MenuOverlay last = overlaysStack.Last();
+            if (sequentialTransition)
+            {
+                yield return last.Close(animate);
+            }
+            else
+            {
+                StartCoroutine(last.Close(animate));
+            }
+
+            overlaysStack.Remove(last);
+
+            // Open previous.
+            if (overlaysStack.Count == 0)
+            {
+                yield break;
+            }
+
+            MenuOverlay previous = overlaysStack.Last();
+            SetCurrentOverlay(previous);
+            StartCoroutine(previous.Open());
         }
     }
 }

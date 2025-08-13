@@ -1,7 +1,6 @@
-﻿//@vadym udod
-
-using HootyBird.Minimal.Services;
+﻿using HootyBird.Minimal.Services;
 using HootyBird.Minimal.Tween;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -67,27 +66,49 @@ namespace HootyBird.Minimal.Menu
         /// <summary>
         /// Invoked when overlay is opened.
         /// </summary>
-        public virtual void Open()
+        public virtual IEnumerator Open(bool animate = true)
         {
-            UpdateWidgets();
-
-            if (IsOpened) return;
+            // Already opened...
+            if (IsOpened)
+            {
+                yield break;
+            }
 
             IsOpened = true;
 
             if (tween)
             {
-                tween.PlayForward(true);
+                if (animate)
+                {
+                    tween.PlayForward(true);
+
+                    // Wait for tween to finish.
+                    while (tween.isPlaying)
+                    {
+                        yield return null;
+                    }
+                }
+                else
+                {
+                    tween.Progress(1f, PlaybackDirection.FORWARD);
+                }
             }
 
             SetInteractable(true);
             SetBlockRaycasts(true);
+
+            RefreshContent();
+        }
+
+        public virtual void RefreshContent() 
+        {
+            UpdateWidgets();
         }
 
         /// <summary>
         /// Invoked when overlay is closed.
         /// </summary>
-        public virtual void Close(bool animate = true)
+        public virtual IEnumerator Close(bool animate = true)
         {
             IsOpened = false;
 
@@ -96,6 +117,12 @@ namespace HootyBird.Minimal.Menu
                 if (animate)
                 {
                     tween.PlayBackward(true);
+
+                    // Wait for tween to finish.
+                    while (tween.isPlaying)
+                    {
+                        yield return null;
+                    }
                 }
                 else
                 {
@@ -105,42 +132,8 @@ namespace HootyBird.Minimal.Menu
 
             SetInteractable(false);
             SetBlockRaycasts(false);
-        }
 
-        /// <summary>
-        /// Removes overlay from active overlays stack, and closes it.
-        /// </summary>
-        /// <param name="animate"></param>
-        public void CloseSelf(bool animate = true)
-        {
-            if (MenuController)
-            {
-                if (IsCurrent)
-                {
-                    MenuController.GoBack(animate);
-                }
-                else
-                {
-                    Close(animate);
-                    if (MenuController.overlaysStack.Contains(this))
-                    {
-                        MenuController.overlaysStack.Remove(this);
-                    }
-                }
-            }
-            else
-            {
-                Close(animate);
-            }
-        }
-
-        /// <summary>
-        /// Blocks input on overlay.
-        /// </summary>
-        public virtual void BlockInput()
-        {
-            SetInteractable(false);
-            canvasGroup.blocksRaycasts = true;
+            RefreshContent();
         }
         
         /// <summary>

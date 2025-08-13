@@ -199,14 +199,16 @@ namespace HootyBird.Minimal.Tween
 
         public List<Graphics> Parse(Transform obj, bool propagate)
         {
-            List<Graphics> _graphics = new List<Graphics>();
-
-            _graphics.Add(new Graphics() { 
-                spriteRenderer = obj.GetComponent<SpriteRenderer>(), 
-                uiGraphics = obj.GetComponent<MaskableGraphic>(), 
-                lineRenderer = obj.GetComponent<LineRenderer>(),
-                canvasGroup = obj.GetComponent<CanvasGroup>(),
-            });
+            List<Graphics> _graphics = new List<Graphics>
+            {
+                new Graphics()
+                {
+                    spriteRenderer = obj.GetComponent<SpriteRenderer>(),
+                    uiGraphics = obj.GetComponent<MaskableGraphic>(),
+                    lineRenderer = obj.GetComponent<LineRenderer>(),
+                    canvasGroup = obj.GetComponent<CanvasGroup>(),
+                }
+            };
 
             if (propagate)
             {
