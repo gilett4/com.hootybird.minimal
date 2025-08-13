@@ -75,6 +75,7 @@ namespace HootyBird.Minimal.Menu
             }
 
             IsOpened = true;
+            RefreshContent();
 
             if (tween)
             {
@@ -96,8 +97,6 @@ namespace HootyBird.Minimal.Menu
 
             SetInteractable(true);
             SetBlockRaycasts(true);
-
-            RefreshContent();
         }
 
         public virtual void RefreshContent() 
