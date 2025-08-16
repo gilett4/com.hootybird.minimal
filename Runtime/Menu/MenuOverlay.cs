@@ -58,7 +58,7 @@ namespace HootyBird.Minimal.Menu
             if (isDefault)
             {
                 MenuController.SetCurrentOverlay(this);
-                UpdateWidgets();
+                RefreshContent();
                 IsOpened = true;
             }
         }
