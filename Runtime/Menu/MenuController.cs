@@ -130,7 +130,7 @@ namespace HootyBird.Minimal.Menu
         /// Open overlay and set it as current one.
         /// </summary>
         /// <param name="overlay">Target overlay.</param>
-        public void OpenOverlay(MenuOverlay overlay)
+        public virtual void OpenOverlay(MenuOverlay overlay)
         {
             if (overlay == null)
             {
