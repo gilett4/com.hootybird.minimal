@@ -131,8 +131,6 @@ namespace HootyBird.Minimal.Menu
 
             SetInteractable(false);
             SetBlockRaycasts(false);
-
-            RefreshContent();
         }
         
         /// <summary>
