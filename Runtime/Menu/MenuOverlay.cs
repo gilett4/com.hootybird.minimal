@@ -2,6 +2,7 @@
 using HootyBird.Minimal.Tween;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace HootyBird.Minimal.Menu
@@ -132,7 +133,19 @@ namespace HootyBird.Minimal.Menu
             SetInteractable(false);
             SetBlockRaycasts(false);
         }
-        
+
+        public T GetWidget<T>() where T : MenuWidget
+        {
+            return widgets.Find(overlay => overlay.GetType() == typeof(T) || overlay.GetType().IsSubclassOf(typeof(T))) as T;
+        }
+
+        public IEnumerable<T> GetWidgets<T>() where T : MenuWidget
+        {
+            return widgets
+                .FindAll(overlay => overlay.GetType() == typeof(T) || overlay.GetType().IsSubclassOf(typeof(T)))
+                .Cast<T>();
+        }
+
         /// <summary>
         /// Invoked when back button is pressed (<see cref="MenuController.Update"/>);
         /// </summary>
@@ -164,7 +177,7 @@ namespace HootyBird.Minimal.Menu
         }
 
         /// <summary>
-        /// Invoked when overlay regains focus.
+        /// Invoked when overlay is refreshed.
         /// </summary>
         private void UpdateWidgets()
         {
