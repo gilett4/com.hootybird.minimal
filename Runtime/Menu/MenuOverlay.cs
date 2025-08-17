@@ -35,6 +35,7 @@ namespace HootyBird.Minimal.Menu
         /// Was overlay opened?
         /// </summary>
         public bool IsOpened { get; private set; }
+        public TransitionState Transition { get; private set; } = TransitionState.None;
         /// <summary>
         /// Is currently active overlay?
         /// </summary>
@@ -64,6 +65,31 @@ namespace HootyBird.Minimal.Menu
             }
         }
 
+        protected virtual void OnDisable()
+        {
+            switch (Transition)
+            {
+                case TransitionState.Openning:
+                    tween.Progress(1f, PlaybackDirection.FORWARD);
+
+                    SetInteractable(true);
+                    SetBlockRaycasts(true);
+
+                    break;
+
+                case TransitionState.Closing:
+                    tween.Progress(0f, PlaybackDirection.FORWARD);
+
+                    SetInteractable(false);
+                    SetBlockRaycasts(false);
+
+                    break;
+
+            }
+
+            Transition = TransitionState.None;
+        }
+
         /// <summary>
         /// Invoked when overlay is opened.
         /// </summary>
@@ -75,6 +101,7 @@ namespace HootyBird.Minimal.Menu
                 yield break;
             }
 
+            Transition = TransitionState.Openning;
             IsOpened = true;
             RefreshContent();
 
@@ -98,6 +125,8 @@ namespace HootyBird.Minimal.Menu
 
             SetInteractable(true);
             SetBlockRaycasts(true);
+
+            Transition = TransitionState.None;
         }
 
         public virtual void RefreshContent() 
@@ -110,6 +139,13 @@ namespace HootyBird.Minimal.Menu
         /// </summary>
         public virtual IEnumerator Close(bool animate = true)
         {
+            // Already closed...
+            if (!IsOpened)
+            {
+                yield break;
+            }
+
+            Transition = TransitionState.Closing;
             IsOpened = false;
 
             if (tween)
@@ -132,6 +168,8 @@ namespace HootyBird.Minimal.Menu
 
             SetInteractable(false);
             SetBlockRaycasts(false);
+
+            Transition = TransitionState.None;
         }
 
         public T GetWidget<T>() where T : MenuWidget
@@ -185,6 +223,13 @@ namespace HootyBird.Minimal.Menu
             {
                 widget.UpdateWidget();
             }
+        }
+
+        public enum TransitionState 
+        { 
+            None = 0,
+            Openning = 1,
+            Closing = 2,
         }
     }
 }
