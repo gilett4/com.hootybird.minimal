@@ -95,6 +95,8 @@ namespace HootyBird.Minimal.Menu
         /// </summary>
         public virtual IEnumerator Open(bool animate = true)
         {
+            RefreshContent();
+
             // Already opened...
             if (IsOpened)
             {
@@ -103,7 +105,6 @@ namespace HootyBird.Minimal.Menu
 
             Transition = TransitionState.Openning;
             IsOpened = true;
-            RefreshContent();
 
             if (tween)
             {
