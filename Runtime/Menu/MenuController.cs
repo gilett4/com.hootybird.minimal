@@ -22,17 +22,18 @@ namespace HootyBird.Minimal.Menu
         public static Dictionary<string, MenuController> Controllers = new Dictionary<string, MenuController>(); 
 
         [SerializeField]
-        public bool active = false;
+        public bool state = false;
         [SerializeField]
         private bool sequentialTransition = false;
 
         protected TweenBase tween;
         protected GraphicRaycaster raycaster;
 
-        public List<MenuOverlay> overlays { get; protected set; }
-        public List<MenuOverlay> overlaysStack { get; protected set; }
-        public MenuOverlay currentOverlay { get; protected set; }
-        public bool initialized { get; private set; }
+        public List<MenuOverlay> Overlays { get; protected set; }
+        public List<MenuOverlay> OverlaysStack { get; protected set; }
+        public MenuOverlay CurrentOverlay { get; protected set; }
+        public bool Initialized { get; private set; }
+        public bool State => state;
 
         protected virtual void Awake()
         {
@@ -44,9 +45,9 @@ namespace HootyBird.Minimal.Menu
         /// </summary>
         protected virtual void Update()
         {
-            if (active && overlaysStack.Count > 0 && Input.GetKeyDown(KeyCode.Escape))
+            if (state && OverlaysStack.Count > 0 && Input.GetKeyDown(KeyCode.Escape))
             {
-                MenuOverlay overlay = overlaysStack.Last();
+                MenuOverlay overlay = OverlaysStack.Last();
 
                 if (!overlay.Interactable) return;
 
@@ -59,9 +60,9 @@ namespace HootyBird.Minimal.Menu
         protected virtual void OnEnable()
         {
             // Reopen active overlay when this controller activated.
-            if (currentOverlay)
+            if (CurrentOverlay)
             {
-                currentOverlay.Open();
+                CurrentOverlay.Open();
             }
         }
 
@@ -86,11 +87,11 @@ namespace HootyBird.Minimal.Menu
         /// <param name="index">Index.</param>
         public void SetCurrentOverlay(int index)
         {
-            currentOverlay = overlays[index];
+            CurrentOverlay = Overlays[index];
 
-            if (overlaysStack.Count == 0)
+            if (OverlaysStack.Count == 0)
             {
-                overlaysStack.Add(currentOverlay);
+                OverlaysStack.Add(CurrentOverlay);
             }
         }
 
@@ -98,7 +99,7 @@ namespace HootyBird.Minimal.Menu
         /// Sets overlay as current.
         /// </summary>
         /// <param name="screen">Target.</param>
-        public void SetCurrentOverlay(MenuOverlay screen) => SetCurrentOverlay(overlays.IndexOf(screen));
+        public void SetCurrentOverlay(MenuOverlay screen) => SetCurrentOverlay(Overlays.IndexOf(screen));
 
         /// <summary>
         /// Closes current screen, and opens previous one if available.
@@ -114,7 +115,7 @@ namespace HootyBird.Minimal.Menu
         /// <param name="index">Target index/</param>
         public void OpenOverlay(int index)
         {
-            OpenOverlay(overlays[index]);
+            OpenOverlay(Overlays[index]);
         }
 
         /// <summary>
@@ -123,7 +124,7 @@ namespace HootyBird.Minimal.Menu
         /// <param name="overlay">Target overlay.</param>
         public void OpenOverlay<T>() where T : MenuOverlay
         {
-            OpenOverlay(overlays.Find(overlay => overlay.GetType() == typeof(T) || overlay.GetType().IsSubclassOf(typeof(T))) as T);
+            OpenOverlay(Overlays.Find(overlay => overlay.GetType() == typeof(T) || overlay.GetType().IsSubclassOf(typeof(T))) as T);
         }
 
         /// <summary>
@@ -150,7 +151,7 @@ namespace HootyBird.Minimal.Menu
         {
             Initialize();
 
-            return overlays.Find(overlay => overlay.GetType() == typeof(T) || overlay.GetType().IsSubclassOf(typeof(T))) as T;
+            return Overlays.Find(overlay => overlay.GetType() == typeof(T) || overlay.GetType().IsSubclassOf(typeof(T))) as T;
         }
 
         /// <summary>
@@ -162,7 +163,7 @@ namespace HootyBird.Minimal.Menu
         {
             Initialize();
 
-            return overlays
+            return Overlays
                 .FindAll(overlay => overlay.GetType() == typeof(T) || overlay.GetType().IsSubclassOf(typeof(T)))
                 .Cast<T>();
         }
@@ -173,7 +174,7 @@ namespace HootyBird.Minimal.Menu
         /// <param name="state">State value.</param>
         public virtual void SetActive(bool state)
         {
-            if (state == active)
+            if (this.state == state)
             {
                 return;
             }
@@ -191,14 +192,14 @@ namespace HootyBird.Minimal.Menu
                 // Animate menu controller.
                 tween.PlayForward(false);
                 // Refresh active overlay.
-                ActiveMenuController.currentOverlay?.RefreshContent();
+                ActiveMenuController.CurrentOverlay?.RefreshContent();
             }
             else
             {
                 tween.PlayBackward(false);
             }
 
-            active = state;
+            this.state = state;
 
             // Toogle raycaster.
             raycaster.enabled = state;
@@ -217,21 +218,21 @@ namespace HootyBird.Minimal.Menu
             MenuOverlay newOverlay = Instantiate(prefab, transform);
 
             newOverlay.transform.localScale = Vector3.one;
-            overlays.Add(newOverlay);
+            Overlays.Add(newOverlay);
 
             return (T)newOverlay;
         }
 
         private void Initialize()
         {
-            if (initialized)
+            if (Initialized)
             {
                 return;
             }
 
-            initialized = true;
-            overlays = new List<MenuOverlay>(transform.GetComponentsInChildren<MenuOverlay>());
-            overlaysStack = new List<MenuOverlay>();
+            Initialized = true;
+            Overlays = new List<MenuOverlay>(transform.GetComponentsInChildren<MenuOverlay>());
+            OverlaysStack = new List<MenuOverlay>();
 
             raycaster = GetComponent<GraphicRaycaster>();
             tween = GetComponent<TweenBase>();
@@ -239,7 +240,7 @@ namespace HootyBird.Minimal.Menu
 
             Controllers.Add(name, this);
 
-            if (active)
+            if (state)
             {
                 ActiveMenuController = this;
             }
@@ -263,36 +264,36 @@ namespace HootyBird.Minimal.Menu
 
         private IEnumerator OpenOverlayRoutine(MenuOverlay overlay)
         {
-            if (currentOverlay && currentOverlay != overlay && currentOverlay.IsOpened && overlay.ClosePreviousWhenOpened)
+            if (CurrentOverlay && CurrentOverlay != overlay && CurrentOverlay.IsOpened && overlay.ClosePreviousWhenOpened)
             {
                 if (sequentialTransition)
                 {
-                    yield return currentOverlay.Close();
+                    yield return CurrentOverlay.Close();
                 }
                 else
                 {
-                    StartCoroutine(currentOverlay.Close());
+                    StartCoroutine(CurrentOverlay.Close());
                 }
             }
 
-            if (!currentOverlay || (currentOverlay != overlay))
+            if (!CurrentOverlay || (CurrentOverlay != overlay))
             {
-                overlaysStack.Add(overlay);
+                OverlaysStack.Add(overlay);
             }
 
             SetCurrentOverlay(overlay);
-            StartCoroutine(currentOverlay.Open());
+            StartCoroutine(CurrentOverlay.Open());
         }
 
         private IEnumerator CloseCurrentOverlayRoutine(bool animate)
         {
             // Close current.
-            if (overlaysStack.Count == 0)
+            if (OverlaysStack.Count == 0)
             {
                 yield break;
             }
 
-            MenuOverlay last = overlaysStack.Last();
+            MenuOverlay last = OverlaysStack.Last();
             if (sequentialTransition)
             {
                 yield return last.Close(animate);
@@ -302,15 +303,15 @@ namespace HootyBird.Minimal.Menu
                 StartCoroutine(last.Close(animate));
             }
 
-            overlaysStack.Remove(last);
+            OverlaysStack.Remove(last);
 
             // Open previous.
-            if (overlaysStack.Count == 0)
+            if (OverlaysStack.Count == 0)
             {
                 yield break;
             }
 
-            MenuOverlay previous = overlaysStack.Last();
+            MenuOverlay previous = OverlaysStack.Last();
             SetCurrentOverlay(previous);
             StartCoroutine(previous.Open());
         }

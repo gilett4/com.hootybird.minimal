@@ -39,7 +39,7 @@ namespace HootyBird.Minimal.Menu
         /// <summary>
         /// Is currently active overlay?
         /// </summary>
-        public virtual bool IsCurrent => MenuController ? MenuController.currentOverlay == this : false;
+        public virtual bool IsCurrent => MenuController ? MenuController.CurrentOverlay == this : false;
         public bool ClosePreviousWhenOpened => closePreviousWhenOpened;
         public bool Interactable => canvasGroup ? canvasGroup.interactable : gameObject.activeInHierarchy;
         public RectTransform RectTransform { get; protected set; }
