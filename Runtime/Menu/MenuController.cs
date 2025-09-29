@@ -22,7 +22,7 @@ namespace HootyBird.Minimal.Menu
         public static Dictionary<string, MenuController> Controllers = new Dictionary<string, MenuController>(); 
 
         [SerializeField]
-        public bool state = false;
+        private bool state = false;
         [SerializeField]
         private bool sequentialTransition = false;
 
@@ -30,7 +30,14 @@ namespace HootyBird.Minimal.Menu
         protected GraphicRaycaster raycaster;
 
         public List<MenuOverlay> Overlays { get; protected set; }
+#if UNITY_EDITOR
+        [Space(10f)]
+        [Header("Only exposed in the editor.")]
+        [SerializeField]
+        public List<MenuOverlay> OverlaysStack;
+#else
         public List<MenuOverlay> OverlaysStack { get; protected set; }
+#endif
         public MenuOverlay CurrentOverlay { get; protected set; }
         public bool Initialized { get; private set; }
         public bool State => state;
