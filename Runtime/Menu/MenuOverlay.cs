@@ -149,6 +149,9 @@ namespace HootyBird.Minimal.Menu
             Transition = TransitionState.Closing;
             IsOpened = false;
 
+            SetInteractable(false);
+            SetBlockRaycasts(false);
+
             if (tween)
             {
                 if (animate)
@@ -166,9 +169,6 @@ namespace HootyBird.Minimal.Menu
                     tween.Progress(0f, PlaybackDirection.FORWARD);
                 }
             }
-
-            SetInteractable(false);
-            SetBlockRaycasts(false);
 
             Transition = TransitionState.None;
         }

@@ -5,39 +5,46 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
+#if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
+using UnityEngine.InputSystem; // New Input System
+#endif
+
 namespace HootyBird.Minimal.Menu
 {
     /// <summary>
     /// Menu controller. Handles menu overlays under it.
     /// </summary>
+    [DisallowMultipleComponent]
+    [RequireComponent(typeof(GraphicRaycaster))]
     public class MenuController : MonoBehaviour
     {
         /// <summary>
         /// Active controller reference.
         /// </summary>
         public static MenuController ActiveMenuController { get; protected set; }
+
         /// <summary>
         /// All available controllers.
         /// </summary>
-        public static Dictionary<string, MenuController> Controllers = new Dictionary<string, MenuController>(); 
+        public static readonly Dictionary<string, MenuController> Controllers = new Dictionary<string, MenuController>();
 
-        [SerializeField]
-        private bool state = false;
-        [SerializeField]
-        private bool sequentialTransition = false;
+        [SerializeField] private bool state = false;
+        [SerializeField] private bool sequentialTransition = false;
 
         protected TweenBase tween;
         protected GraphicRaycaster raycaster;
+        protected Coroutine currentTransitionRoutine;
 
         public List<MenuOverlay> Overlays { get; protected set; }
+
 #if UNITY_EDITOR
         [Space(10f)]
         [Header("Only exposed in the editor.")]
-        [SerializeField]
-        public List<MenuOverlay> OverlaysStack;
+        [SerializeField] public List<MenuOverlay> OverlaysStack;
 #else
         public List<MenuOverlay> OverlaysStack { get; protected set; }
 #endif
+
         public MenuOverlay CurrentOverlay { get; protected set; }
         public bool Initialized { get; private set; }
         public bool State => state;
@@ -46,23 +53,6 @@ namespace HootyBird.Minimal.Menu
         {
             Initialize();
         }
-
-        /// <summary>
-        /// Handles "android back"/"keyboard escape" button.
-        /// </summary>
-        protected virtual void Update()
-        {
-            if (state && OverlaysStack.Count > 0 && Input.GetKeyDown(KeyCode.Escape))
-            {
-                MenuOverlay overlay = OverlaysStack.Last();
-
-                if (!overlay.Interactable) return;
-
-                // Invoke OnBack on current screen.
-                overlay.OnBack();
-            }
-        }
-
 
         protected virtual void OnEnable()
         {
@@ -73,11 +63,65 @@ namespace HootyBird.Minimal.Menu
             }
         }
 
+        protected virtual void OnDestroy()
+        {
+            if (tween != null)
+            {
+                tween._onProgress -= OnTweenProgress;
+            }
+
+            // Remove from Controllers map if present.
+            if (Controllers.TryGetValue(name, out var controller) && controller == this)
+            {
+                Controllers.Remove(name);
+            }
+
+            // If we're the active controller, clear it.
+            if (ActiveMenuController == this)
+            {
+                ActiveMenuController = null;
+            }
+        }
+
+        /// <summary>
+        /// Handles "android back"/"keyboard escape" button.
+        /// </summary>
+        protected virtual void Update()
+        {
+            bool backPressed = false;
+
+#if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
+            // New Input System: Escape on Keyboard, Back on Mouse (XButton1), common gamepad back/start buttons.
+            if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+                backPressed = true;
+            else if (Mouse.current != null && Mouse.current.backButton.wasPressedThisFrame)
+                backPressed = true;
+            else if (Gamepad.current != null &&
+                     (Gamepad.current.startButton.wasPressedThisFrame ||
+                      Gamepad.current.selectButton.wasPressedThisFrame ||
+                      Gamepad.current.bButton.wasPressedThisFrame)) // often mapped as 'back/cancel'
+                backPressed = true;
+#else
+            // Old Input Manager
+            backPressed = Input.GetKeyDown(KeyCode.Escape);
+#endif
+
+            if (state && OverlaysStack.Count > 0 && backPressed)
+            {
+                MenuOverlay overlay = OverlaysStack.Last();
+
+                if (!overlay.Interactable) return;
+
+                // Invoke OnBack on current screen.
+                overlay.OnBack();
+            }
+        }
+
         public static T GetMenuController<T>(string name) where T : MenuController
         {
-            if (Controllers.ContainsKey(name))
+            if (Controllers.TryGetValue(name, out var ctrl))
             {
-                return Controllers[name] as T;
+                return ctrl as T;
             }
 
             return null;
@@ -128,10 +172,9 @@ namespace HootyBird.Minimal.Menu
         /// <summary>
         /// Open overlay and set it as current one.
         /// </summary>
-        /// <param name="overlay">Target overlay.</param>
         public void OpenOverlay<T>() where T : MenuOverlay
         {
-            OpenOverlay(Overlays.Find(overlay => overlay.GetType() == typeof(T) || overlay.GetType().IsSubclassOf(typeof(T))) as T);
+            OpenOverlay(Overlays.Find(overlay => overlay is T) as T);
         }
 
         /// <summary>
@@ -152,26 +195,20 @@ namespace HootyBird.Minimal.Menu
         /// <summary>
         /// Find overlay in list of available overlays and return it.
         /// </summary>
-        /// <typeparam name="T">Overlay type.</typeparam>
-        /// <returns>Target overlay by type.</returns>
         public T GetOverlay<T>() where T : MenuOverlay
         {
             Initialize();
-
-            return Overlays.Find(overlay => overlay.GetType() == typeof(T) || overlay.GetType().IsSubclassOf(typeof(T))) as T;
+            return Overlays.Find(overlay => overlay is T) as T;
         }
 
         /// <summary>
         /// Find overlays in list of available overlays by type.
         /// </summary>
-        /// <typeparam name="T">Overlay type.</typeparam>
-        /// <returns>Overlays list by type.</returns>
         public IEnumerable<T> GetOverlays<T>() where T : MenuOverlay
         {
             Initialize();
-
             return Overlays
-                .FindAll(overlay => overlay.GetType() == typeof(T) || overlay.GetType().IsSubclassOf(typeof(T)))
+                .FindAll(overlay => overlay is T)
                 .Cast<T>();
         }
 
@@ -188,42 +225,46 @@ namespace HootyBird.Minimal.Menu
 
             if (state)
             {
-                if (ActiveMenuController != this)
+                if (ActiveMenuController != null && ActiveMenuController != this)
                 {
                     ActiveMenuController.SetActive(false);
                 }
 
                 ActiveMenuController = this;
+
                 // Activate GO.
-                gameObject.SetActive(true);
+                if (!gameObject.activeSelf)
+                    gameObject.SetActive(true);
+
                 // Animate menu controller.
-                tween.PlayForward(false);
+                if (tween != null) tween.PlayForward(false);
+
                 // Refresh active overlay.
                 ActiveMenuController.CurrentOverlay?.RefreshContent();
             }
             else
             {
-                tween.PlayBackward(false);
+                // Animate backward; if no tween, disable immediately.
+                if (tween != null)
+                    tween.PlayBackward(false);
+                else
+                    gameObject.SetActive(false);
             }
 
             this.state = state;
 
-            // Toogle raycaster.
-            raycaster.enabled = state;
+            // Toggle raycaster.
+            if (raycaster != null) raycaster.enabled = state;
         }
 
         /// <summary>
         /// Add overlay to controller overlays list.
         /// </summary>
-        /// <typeparam name="T">Return overlay type.</typeparam>
-        /// <param name="prefab">Overlay prefab.</param>
-        /// <returns></returns>
         public T AddOverlay<T>(MenuOverlay prefab) where T : MenuOverlay
         {
             if (!prefab) return null;
 
             MenuOverlay newOverlay = Instantiate(prefab, transform);
-
             newOverlay.transform.localScale = Vector3.one;
             Overlays.Add(newOverlay);
 
@@ -232,64 +273,85 @@ namespace HootyBird.Minimal.Menu
 
         private void Initialize()
         {
-            if (Initialized)
-            {
-                return;
-            }
+            if (Initialized) return;
 
             Initialized = true;
-            Overlays = new List<MenuOverlay>(transform.GetComponentsInChildren<MenuOverlay>());
-            OverlaysStack = new List<MenuOverlay>();
+
+            Overlays = new List<MenuOverlay>(transform.GetComponentsInChildren<MenuOverlay>(true));
+            OverlaysStack = OverlaysStack ?? new List<MenuOverlay>();
 
             raycaster = GetComponent<GraphicRaycaster>();
             tween = GetComponent<TweenBase>();
-            tween._onProgress += OnTweenProgress;
 
-            Controllers.Add(name, this);
+            if (tween != null)
+            {
+                tween._onProgress -= OnTweenProgress; // avoid double-subscribe
+                tween._onProgress += OnTweenProgress;
+            }
+
+            // Ensure unique/updated registration by name
+            Controllers[name] = this;
 
             if (state)
             {
                 ActiveMenuController = this;
+                if (raycaster != null) raycaster.enabled = true;
             }
             else
             {
-                raycaster.enabled = false;
+                if (raycaster != null) raycaster.enabled = false;
+                // If starting inactive and no tween will hide us, ensure GO matches state.
+                if (tween == null && gameObject.activeSelf) gameObject.SetActive(false);
             }
         }
 
         /// <summary>
         /// Deactivates controller when fadeOut animation is complete.
         /// </summary>
-        /// <param name="value"></param>
         private void OnTweenProgress(float value)
         {
-            if (tween.playbackDirection == PlaybackDirection.BACKWARD && value == 0f)
+            if (tween != null &&
+                tween.playbackDirection == PlaybackDirection.BACKWARD &&
+                Mathf.Approximately(value, 0f))
             {
                 gameObject.SetActive(false);
             }
         }
 
+        private void CheckCurrentTransitionRoutineCancel()
+        {
+            if (currentTransitionRoutine != null)
+            {
+                StopCoroutine(currentTransitionRoutine);
+                currentTransitionRoutine = null;
+            }
+        }
+
         private IEnumerator OpenOverlayRoutine(MenuOverlay overlay)
         {
+            CheckCurrentTransitionRoutineCancel();
+
             if (CurrentOverlay && CurrentOverlay != overlay && CurrentOverlay.IsOpened && overlay.ClosePreviousWhenOpened)
             {
+                currentTransitionRoutine = StartCoroutine(CurrentOverlay.Close());
+
                 if (sequentialTransition)
                 {
-                    yield return CurrentOverlay.Close();
-                }
-                else
-                {
-                    StartCoroutine(CurrentOverlay.Close());
+                    yield return currentTransitionRoutine;
                 }
             }
 
-            if (!CurrentOverlay || (CurrentOverlay != overlay))
+            if (CurrentOverlay != overlay)
             {
                 OverlaysStack.Add(overlay);
             }
 
             SetCurrentOverlay(overlay);
-            StartCoroutine(CurrentOverlay.Open());
+            currentTransitionRoutine = StartCoroutine(CurrentOverlay.Open());
+
+            yield return currentTransitionRoutine;
+
+            currentTransitionRoutine = null;
         }
 
         private IEnumerator CloseCurrentOverlayRoutine(bool animate)
@@ -300,14 +362,14 @@ namespace HootyBird.Minimal.Menu
                 yield break;
             }
 
+            CheckCurrentTransitionRoutineCancel();
+
             MenuOverlay last = OverlaysStack.Last();
+            currentTransitionRoutine = StartCoroutine(last.Close(animate));
+
             if (sequentialTransition)
             {
-                yield return last.Close(animate);
-            }
-            else
-            {
-                StartCoroutine(last.Close(animate));
+                yield return currentTransitionRoutine;
             }
 
             OverlaysStack.Remove(last);
@@ -315,12 +377,17 @@ namespace HootyBird.Minimal.Menu
             // Open previous.
             if (OverlaysStack.Count == 0)
             {
+                currentTransitionRoutine = null;
                 yield break;
             }
 
             MenuOverlay previous = OverlaysStack.Last();
             SetCurrentOverlay(previous);
-            StartCoroutine(previous.Open());
+            currentTransitionRoutine = StartCoroutine(previous.Open());
+
+            yield return currentTransitionRoutine;
+
+            currentTransitionRoutine = null;
         }
     }
 }
