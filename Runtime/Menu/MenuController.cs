@@ -48,6 +48,7 @@ namespace HootyBird.Minimal.Menu
         public MenuOverlay CurrentOverlay { get; protected set; }
         public bool Initialized { get; private set; }
         public bool State => state;
+        public bool SequentialTransition => sequentialTransition;
 
         protected virtual void Awake()
         {
@@ -318,7 +319,7 @@ namespace HootyBird.Minimal.Menu
             }
         }
 
-        private void CheckCurrentTransitionRoutineCancel()
+        protected void CheckCurrentTransitionRoutineCancel()
         {
             if (currentTransitionRoutine != null)
             {
