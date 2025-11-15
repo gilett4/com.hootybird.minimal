@@ -16,17 +16,16 @@ namespace HootyBird.Minimal.Menu
     {
         [SerializeField]
         private bool closePreviousWhenOpened = true;
-
         [SerializeField]
         [Tooltip("What audio to play when onBack invoked")]
         protected string onBackSfx = "menu-back";
-
         [SerializeField]
         protected bool isDefault = false;
+        [SerializeField, Header("Tween override.")]
+        protected TweenBase tween;
 
         protected List<MenuWidget> widgets;
         protected CanvasGroup canvasGroup;
-        protected TweenBase tween;
 
         /// <summary>
         /// Controller that this overlay is under.
@@ -50,7 +49,7 @@ namespace HootyBird.Minimal.Menu
             MenuController = GetComponentInParent<MenuController>();
 
             canvasGroup = GetComponent<CanvasGroup>();
-            tween = GetComponent<TweenBase>();
+            tween ??= GetComponent<TweenBase>();
             RectTransform = GetComponent<RectTransform>();
 
             widgets = new List<MenuWidget>(GetComponentsInChildren<MenuWidget>());
