@@ -8,6 +8,7 @@ using UnityEngine.UI;
 
 namespace HootyBird.Minimal.Tween
 {
+    [DefaultExecutionOrder(-999)]
     public abstract class TweenBase : MonoBehaviour
     {
         public PlaybackDirection playbackDirection = PlaybackDirection.FORWARD;

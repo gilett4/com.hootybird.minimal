@@ -11,7 +11,7 @@ namespace HootyBird.Minimal.Menu
     /// Base overlay that menu consists of.
     /// </summary>
     [RequireComponent(typeof(CanvasGroup))]
-    [DefaultExecutionOrder(-1)]
+    [DefaultExecutionOrder(-2)]
     public class MenuOverlay : MonoBehaviour
     {
         [SerializeField]

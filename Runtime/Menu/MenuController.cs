@@ -16,7 +16,7 @@ namespace HootyBird.Minimal.Menu
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(GraphicRaycaster))]
-    [DefaultExecutionOrder(-2)]
+    [DefaultExecutionOrder(-3)]
     public class MenuController : MonoBehaviour
     {
         /// <summary>
